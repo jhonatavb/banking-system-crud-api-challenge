@@ -10,13 +10,29 @@ const createFormatAccountBank = (usuario) => {
 };
 
 const verifyBodyAndData = (body) => {
-  if (!body || Object.keys(body).length === 0)
-    return { statusCode: 400, message: "Por favor informe os dados da conta!" };
+  const bodyData = Object.keys(body);
 
-  const { nome, cpf, data_nascimento, telefone, email, senha } = body;
+  if (!body || bodyData.length === 0)
+    return {
+      statusCode: 400,
+      mensagem: "Por favor informe os dados da conta!",
+    };
 
-  if (!nome || !cpf || !data_nascimento || !telefone || !email || !senha)
-    return { statusCode: 422, message: "Por favor informe todos os campos" };
+  const correctKeys = [
+    "nome",
+    "cpf",
+    "data_nascimento",
+    "telefone",
+    "email",
+    "senha",
+  ];
+
+  const dataVerificationSuccess = bodyData.every((key) => {
+    return correctKeys.includes(key);
+  });
+
+  if (correctKeys.length !== 6 || !dataVerificationSuccess)
+    return { statusCode: 422, mensagem: "Por favor informe todos os campos" };
 
   return false;
 };
@@ -41,9 +57,9 @@ const listingExistingBankAccounts = (req, res) => {
 const addBankAccount = (req, res) => {
   const [body] = req.body;
   const { contas } = bancoDeDados;
-  const { statusCode, message } = verifyBodyAndData(body);
+  const { statusCode, mensagem } = verifyBodyAndData(body);
 
-  if (statusCode && message) return res.status(statusCode).send({ message });
+  if (statusCode && mensagem) return res.status(statusCode).send({ mensagem });
 
   const { cpf, email } = body;
 
@@ -82,20 +98,20 @@ const editUserBankAccount = (req, res) => {
 
   if (!accountExists)
     return res.status(404).send({
-      message:
+      mensgem:
         "Conta não encontrada: A conta que você está tentando editar não existe em nosso sistema.",
     });
 
-  const { statusCode, message } = verifyBodyAndData(body);
+  const { statusCode, mensagem } = verifyBodyAndData(body);
 
-  if (statusCode && message) return res.status(statusCode).send({ message });
+  if (statusCode && mensagem) return res.status(statusCode).send({ mensagem });
 
   const dataAlreadyRegistered = checkIfClientIsRegistered(cpf, email);
 
   if (dataAlreadyRegistered)
     return res
       .status(409)
-      .send({ message: "Já existe uma conta com o cpf ou e-mail informado!" });
+      .send({ mensagem: "Já existe uma conta com o cpf ou e-mail informado!" });
 
   const idxAccountEdit = contas.findIndex(
     (acc) => acc.numero === Number(numeroConta)
@@ -107,8 +123,39 @@ const editUserBankAccount = (req, res) => {
   return res.status(204).send();
 };
 
+const deleteUserAccount = (req, res) => {
+  const { contas } = bancoDeDados;
+  const { numeroConta } = req.params;
+
+  const accountExists = contas.find(
+    (acc) => acc.numero === Number(numeroConta)
+  );
+
+  if (!accountExists)
+    return res.status(404).send({
+      mensagem:
+        "Desculpe, a conta que você está tentando excluir não foi encontrada em nosso sistema.",
+    });
+
+  const { numero, saldo } = accountExists;
+  if (saldo !== 0)
+    return res.status(409).send({
+      mensagem:
+        "Não é possível excluir a conta neste momento, pois ela possui um saldo diferente de zero.",
+    });
+
+  const idxAccountDel = contas.findIndex(
+    (acc) => acc.numero === Number(numero)
+  );
+
+  contas.splice(idxAccountDel, 1);
+
+  return res.status(204).send();
+};
+
 module.exports = {
   listingExistingBankAccounts,
   addBankAccount,
   editUserBankAccount,
+  deleteUserAccount,
 };
