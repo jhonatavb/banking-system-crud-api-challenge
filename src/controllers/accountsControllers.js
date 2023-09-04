@@ -9,13 +9,20 @@ const createFormatAccountBank = (usuario) => {
   };
 };
 
-const verifyBodyAndData = (body) => {
+const verifyBodyAndData = (body = {}) => {
   const bodyData = Object.keys(body);
 
-  if (!body || bodyData.length === 0)
+  if (bodyData.length === 0)
     return {
       statusCode: 400,
       mensagem: "Por favor informe os dados da conta!",
+    };
+
+  if (bodyData.length !== 6)
+    return {
+      statusCode: 422,
+      mensagem:
+        "A requisição possui campos em excesso/insuficientes. Por favor, ajuste-a para incluir/excluir os campos necessários!",
     };
 
   const correctKeys = [
@@ -31,8 +38,12 @@ const verifyBodyAndData = (body) => {
     return correctKeys.includes(key);
   });
 
-  if (correctKeys.length !== 6 || !dataVerificationSuccess)
-    return { statusCode: 422, mensagem: "Por favor informe todos os campos" };
+  if (!dataVerificationSuccess)
+    return {
+      statusCode: 422,
+      mensagem:
+        "Existe algum campo incorreto na requisição. Por favor revise-o!",
+    };
 
   return false;
 };
@@ -51,7 +62,19 @@ const listingExistingBankAccounts = (req, res) => {
     return res.status(204).send(contas);
   }
 
-  res.status(200).send(contas);
+  return res.status(200).send(contas);
+};
+
+const numberAccountExists = (accountNumber) => {
+  const { contas } = bancoDeDados;
+
+  return contas.find((acc) => acc.numero === Number(accountNumber));
+};
+
+const idxAccount = (accountNumber) => {
+  const { contas } = bancoDeDados;
+
+  return contas.findIndex((acc) => acc.numero === Number(accountNumber));
 };
 
 const addBankAccount = (req, res) => {
@@ -92,9 +115,7 @@ const editUserBankAccount = (req, res) => {
   const { cpf, email } = body;
   const { contas } = bancoDeDados;
 
-  const accountExists = contas.find(
-    (acc) => acc.numero === Number(numeroConta)
-  );
+  const accountExists = numberAccountExists(numeroConta);
 
   if (!accountExists)
     return res.status(404).send({
@@ -113,9 +134,7 @@ const editUserBankAccount = (req, res) => {
       .status(409)
       .send({ mensagem: "Já existe uma conta com o cpf ou e-mail informado!" });
 
-  const idxAccountEdit = contas.findIndex(
-    (acc) => acc.numero === Number(numeroConta)
-  );
+  const idxAccountEdit = idxAccount(numeroConta);
 
   accountExists.usuario = body;
   contas.splice(idxAccountEdit, 1, accountExists);
@@ -127,9 +146,7 @@ const deleteUserAccount = (req, res) => {
   const { contas } = bancoDeDados;
   const { numeroConta } = req.params;
 
-  const accountExists = contas.find(
-    (acc) => acc.numero === Number(numeroConta)
-  );
+  const accountExists = numberAccountExists(numeroConta);
 
   if (!accountExists)
     return res.status(404).send({
@@ -144,13 +161,35 @@ const deleteUserAccount = (req, res) => {
         "Não é possível excluir a conta neste momento, pois ela possui um saldo diferente de zero.",
     });
 
-  const idxAccountDel = contas.findIndex(
-    (acc) => acc.numero === Number(numero)
-  );
-
+  const idxAccountDel = idxAccount(numeroConta);
   contas.splice(idxAccountDel, 1);
 
   return res.status(204).send();
+};
+
+const makeDeposit = (req, res) => {
+  const { numero_conta, valor } = req.body;
+
+  if (!numero_conta || !valor)
+    return res.status(400).send({
+      mensagem: "Por favor informe o número da conta e o valor para deposito. ",
+    });
+
+  const accountExists = numberAccountExists(numero_conta);
+
+  if (!accountExists)
+    return res.status(404).send({
+      mensagem:
+        "Desculpe, a conta que está tentando realizar um deposito não existe.",
+    });
+
+  if (!valor || valor < 0)
+    return res
+      .status(400)
+      .send({ mensagem: "Por favor, informe um saldo válido, acima de zero." });
+
+  accountExists.saldo += valor;
+  res.status(204).send();
 };
 
 module.exports = {
@@ -158,4 +197,5 @@ module.exports = {
   addBankAccount,
   editUserBankAccount,
   deleteUserAccount,
+  makeDeposit,
 };
