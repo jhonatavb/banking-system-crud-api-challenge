@@ -9,6 +9,7 @@ const {
   deleteUserAccount,
   makeDeposit,
   withdrawMoney,
+  transferMoney,
 } = require("../controllers");
 
 router.get("/contas", correctPassword, listingExistingBankAccounts);
@@ -17,4 +18,5 @@ router.put("/:numeroConta/usuario", editUserBankAccount);
 router.delete("/contas/:numeroConta", deleteUserAccount);
 router.post("/transacoes/depositar", makeDeposit);
 router.post("/transacoes/sacar", withdrawMoney);
+router.post("/transacoes/transferir", transferMoney);
 module.exports = router;

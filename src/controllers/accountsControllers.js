@@ -9,7 +9,7 @@ const createFormatAccountBank = (usuario) => {
   };
 };
 
-const verifyBodyAndData = (body = {}) => {
+const verifyBodyAndData = (body = {}, numberKeys, correctKeys = []) => {
   const bodyData = Object.keys(body);
 
   if (bodyData.length === 0)
@@ -18,21 +18,12 @@ const verifyBodyAndData = (body = {}) => {
       mensagem: "Por favor informe os dados da conta!",
     };
 
-  if (bodyData.length !== 6)
+  if (bodyData.length !== numberKeys)
     return {
       statusCode: 422,
       mensagem:
         "A requisição possui campos em excesso/insuficientes. Por favor, ajuste-a para incluir/excluir os campos necessários!",
     };
-
-  const correctKeys = [
-    "nome",
-    "cpf",
-    "data_nascimento",
-    "telefone",
-    "email",
-    "senha",
-  ];
 
   const dataVerificationSuccess = bodyData.every((key) => {
     return correctKeys.includes(key);
@@ -93,7 +84,17 @@ const getActualDateTime = () => {
 const addBankAccount = (req, res) => {
   const [body] = req.body;
   const { contas } = bancoDeDados;
-  const { statusCode, mensagem } = verifyBodyAndData(body);
+
+  const correctKeys = [
+    "nome",
+    "cpf",
+    "data_nascimento",
+    "telefone",
+    "email",
+    "senha",
+  ];
+
+  const { statusCode, mensagem } = verifyBodyAndData(body, 6, correctKeys);
 
   if (statusCode && mensagem) return res.status(statusCode).send({ mensagem });
 
@@ -136,7 +137,16 @@ const editUserBankAccount = (req, res) => {
         "Conta não encontrada: A conta que você está tentando editar não existe em nosso sistema.",
     });
 
-  const { statusCode, mensagem } = verifyBodyAndData(body);
+  const correctKeys = [
+    "nome",
+    "cpf",
+    "data_nascimento",
+    "telefone",
+    "email",
+    "senha",
+  ];
+
+  const { statusCode, mensagem } = verifyBodyAndData(body, 6, correctKeys);
 
   if (statusCode && mensagem) return res.status(statusCode).send({ mensagem });
 
@@ -182,12 +192,14 @@ const deleteUserAccount = (req, res) => {
 
 const makeDeposit = (req, res) => {
   const { depositos } = bancoDeDados;
-  const { numero_conta, valor } = req.body;
+  const { body } = req;
 
-  if (!numero_conta || !valor)
-    return res.status(400).send({
-      mensagem: "Por favor informe o número da conta e o valor para deposito. ",
-    });
+  const correctKeys = ["numero_conta", "valor"];
+  const { statusCode, mensagem } = verifyBodyAndData(body, 2, correctKeys);
+
+  if (statusCode && mensagem) return res.status(statusCode).send({ mensagem });
+
+  const { numero_conta, valor } = req.body;
 
   const accountExists = numberAccountExists(numero_conta);
 
@@ -197,7 +209,7 @@ const makeDeposit = (req, res) => {
         "Desculpe, a conta que está tentando realizar um deposito não existe.",
     });
 
-  if (!valor || valor < 0)
+  if (valor < 0)
     return res
       .status(400)
       .send({ mensagem: "Por favor, informe um saldo válido, acima de zero." });
@@ -213,21 +225,14 @@ const makeDeposit = (req, res) => {
 
 const withdrawMoney = (req, res) => {
   const { saques } = bancoDeDados;
-  req.body !== "undefined" ? req.body : {};
+  const { body } = req;
 
-  if (Object.keys(req.body).length !== 3)
-    return res.status(422).send({
-      mensagem:
-        "A requisição possui campos em excesso/insuficientes. Por favor, ajuste-a para incluir/excluir os campos necessários!",
-    });
+  const correctKeys = ["numero_conta", "valor", "senha"];
+  const { statusCode, mensagem } = verifyBodyAndData(body, 3, correctKeys);
+
+  if (statusCode && mensagem) return res.status(statusCode).send({ mensagem });
 
   const { numero_conta, valor, senha } = req.body;
-
-  if (!numero_conta || !valor || !senha)
-    return res.status(422).send({
-      mensagem:
-        "Existe algum campo incorreto na requisição. Por favor revise-o!",
-    });
 
   const accountExists = numberAccountExists(numero_conta);
 
@@ -255,6 +260,55 @@ const withdrawMoney = (req, res) => {
   return res.status(204).send();
 };
 
+const transferMoney = (req, res) => {
+  const { body } = req;
+  const { transferencias } = bancoDeDados;
+
+  const correctKeys = [
+    "numero_conta_origem",
+    "numero_conta_destino",
+    "valor",
+    "senha",
+  ];
+
+  const { statusCode, mensagem } = verifyBodyAndData(body, 4, correctKeys);
+
+  if (statusCode && mensagem) return res.status(statusCode).send({ mensagem });
+
+  const { numero_conta_origem, numero_conta_destino, valor, senha } = req.body;
+
+  const sourceAccountExists = numberAccountExists(numero_conta_origem);
+  const destinationAccountExists = numberAccountExists(numero_conta_destino);
+
+  if (!sourceAccountExists || !destinationAccountExists)
+    return res.status(404).send({
+      mensagem:
+        "Uma ou ambas as contas envolvidas na transferência não foram encontradas. A transferência não pode ser concluída.",
+    });
+
+  if (valor <= 0 || valor > sourceAccountExists.saldo)
+    return res.status(400).send({
+      mensagem:
+        "O saque não pode ser processado devido a um valor inválido. Certifique-se de que o valor seja positivo e não exceda o saldo disponível na conta bancária.",
+    });
+
+  if (senha !== sourceAccountExists.usuario.senha)
+    return res.status(401).send({ mensagem: "A autenticação falhou! " });
+
+  const data = getActualDateTime();
+  transferencias.push({
+    data,
+    numero_conta_origem,
+    numero_conta_destino,
+    valor,
+  });
+
+  sourceAccountExists.saldo -= valor;
+  destinationAccountExists.saldo += valor;
+
+  return res.status(204).send();
+};
+
 module.exports = {
   listingExistingBankAccounts,
   addBankAccount,
@@ -262,4 +316,5 @@ module.exports = {
   deleteUserAccount,
   makeDeposit,
   withdrawMoney,
+  transferMoney,
 };
