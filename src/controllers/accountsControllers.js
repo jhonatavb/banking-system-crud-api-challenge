@@ -3,7 +3,7 @@ let id = 1;
 
 const createFormatAccountBank = (usuario) => {
   return {
-    numero: id++,
+    numero: (id++).toString(),
     saldo: 0,
     usuario,
   };
@@ -68,13 +68,13 @@ const listingExistingBankAccounts = (req, res) => {
 const numberAccountExists = (accountNumber) => {
   const { contas } = bancoDeDados;
 
-  return contas.find((acc) => acc.numero === Number(accountNumber));
+  return contas.find((acc) => acc.numero === accountNumber);
 };
 
 const idxAccount = (accountNumber) => {
   const { contas } = bancoDeDados;
 
-  return contas.findIndex((acc) => acc.numero === Number(accountNumber));
+  return contas.findIndex((acc) => acc.numero === accountNumber);
 };
 
 const getActualDateTime = () => {
