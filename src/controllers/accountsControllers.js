@@ -77,6 +77,19 @@ const idxAccount = (accountNumber) => {
   return contas.findIndex((acc) => acc.numero === Number(accountNumber));
 };
 
+const getActualDateTime = () => {
+  const fullDate = new Date();
+
+  const year = fullDate.getFullYear();
+  const month = String(fullDate.getMonth() + 1).padStart(2, "0");
+  const day = String(fullDate.getDate()).padStart(2, "0");
+  const hour = String(fullDate.getHours()).padStart(2, "0");
+  const minute = String(fullDate.getMinutes()).padStart(2, "0");
+  const second = String(fullDate.getSeconds()).padStart(2, "0");
+
+  return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+};
+
 const addBankAccount = (req, res) => {
   const [body] = req.body;
   const { contas } = bancoDeDados;
@@ -161,13 +174,14 @@ const deleteUserAccount = (req, res) => {
         "Não é possível excluir a conta neste momento, pois ela possui um saldo diferente de zero.",
     });
 
-  const idxAccountDel = idxAccount(numeroConta);
+  const idxAccountDel = idxAccount(numero);
   contas.splice(idxAccountDel, 1);
 
   return res.status(204).send();
 };
 
 const makeDeposit = (req, res) => {
+  const { depositos } = bancoDeDados;
   const { numero_conta, valor } = req.body;
 
   if (!numero_conta || !valor)
@@ -188,8 +202,13 @@ const makeDeposit = (req, res) => {
       .status(400)
       .send({ mensagem: "Por favor, informe um saldo válido, acima de zero." });
 
+  const data = getActualDateTime();
+
+  depositos.push({ data, numero_conta, valor });
+
   accountExists.saldo += valor;
-  res.status(204).send();
+
+  return res.status(204).send();
 };
 
 module.exports = {
