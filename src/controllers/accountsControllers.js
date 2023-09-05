@@ -211,10 +211,55 @@ const makeDeposit = (req, res) => {
   return res.status(204).send();
 };
 
+const withdrawMoney = (req, res) => {
+  const { saques } = bancoDeDados;
+  req.body !== "undefined" ? req.body : {};
+
+  if (Object.keys(req.body).length !== 3)
+    return res.status(422).send({
+      mensagem:
+        "A requisição possui campos em excesso/insuficientes. Por favor, ajuste-a para incluir/excluir os campos necessários!",
+    });
+
+  const { numero_conta, valor, senha } = req.body;
+
+  if (!numero_conta || !valor || !senha)
+    return res.status(422).send({
+      mensagem:
+        "Existe algum campo incorreto na requisição. Por favor revise-o!",
+    });
+
+  const accountExists = numberAccountExists(numero_conta);
+
+  if (!accountExists)
+    return res.status(404).send({
+      mensagem:
+        "Desculpe, a conta que está tentando realizar um saque não existe.",
+    });
+
+  if (valor > accountExists.saldo || valor <= 0)
+    return res.status(400).send({
+      mensagem:
+        "O saque não pode ser processado devido a um valor inválido. Certifique-se de que o valor seja positivo e não exceda o saldo disponível na conta bancária.",
+    });
+
+  if (senha !== accountExists.usuario.senha)
+    return res.status(401).send({ mensagem: "A autenticação falhou!" });
+
+  const data = getActualDateTime();
+
+  saques.push({ data, numero_conta, valor });
+
+  accountExists.saldo -= valor;
+
+  return res.status(204).send();
+};
+
 module.exports = {
   listingExistingBankAccounts,
   addBankAccount,
   editUserBankAccount,
   deleteUserAccount,
   makeDeposit,
+  withdrawMoney,
 };
