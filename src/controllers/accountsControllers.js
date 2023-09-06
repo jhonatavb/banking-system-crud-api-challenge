@@ -293,6 +293,14 @@ const transferMoney = (req, res) => {
         "Uma ou ambas as contas envolvidas na transferência não foram encontradas. A transferência não pode ser concluída.",
     });
 
+  if (numero_conta_origem === numero_conta_destino)
+    return res
+      .status(400)
+      .send({
+        mensagem:
+          "A transferência de uma conta para ela mesma não é permitida. Por favor, escolha contas diferentes para a transferência.",
+      });
+
   if (valor <= 0 || valor > sourceAccountExists.saldo)
     return res.status(400).send({
       mensagem:
