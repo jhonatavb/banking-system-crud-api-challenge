@@ -39,11 +39,14 @@ const verifyBodyAndData = (body = {}, numberKeys, correctKeys = []) => {
   return false;
 };
 
-const checkIfClientIsRegistered = (cpf, email) => {
+const checkIfClientIsRegistered = (cpf, email, accountNumber = "") => {
   const { contas } = bancoDeDados;
 
   return contas.some((acc) => {
-    return acc.usuario.cpf === cpf || acc.usuario.email === email;
+    return (
+      (acc.usuario.cpf === cpf || acc.usuario.email === email) &&
+      acc.numero !== accountNumber
+    );
   });
 };
 
@@ -150,7 +153,11 @@ const editUserBankAccount = (req, res) => {
 
   if (statusCode && mensagem) return res.status(statusCode).send({ mensagem });
 
-  const dataAlreadyRegistered = checkIfClientIsRegistered(cpf, email);
+  const dataAlreadyRegistered = checkIfClientIsRegistered(
+    cpf,
+    email,
+    numeroConta
+  );
 
   if (dataAlreadyRegistered)
     return res
