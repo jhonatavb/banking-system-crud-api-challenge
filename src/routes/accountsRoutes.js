@@ -15,6 +15,7 @@ const {
   withdrawMoney,
   transferMoney,
   getBalance,
+  getAccountStatement,
 } = require("../controllers");
 
 router.get("/contas", bankValidatePassword, listingExistingBankAccounts);
@@ -25,4 +26,5 @@ router.post("/transacoes/depositar", makeDeposit);
 router.post("/transacoes/sacar", userValidatePassword, withdrawMoney);
 router.post("/transacoes/transferir", userValidatePassword, transferMoney);
 router.get("/contas/saldo", userValidatePassword, getBalance);
+router.get("/contas/extrato", userValidatePassword, getAccountStatement);
 module.exports = router;
