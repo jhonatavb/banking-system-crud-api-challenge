@@ -232,31 +232,15 @@ const makeDeposit = (req, res) => {
 
 const withdrawMoney = (req, res) => {
   const { saques } = bancoDeDados;
-  const { body } = req;
-
-  const correctKeys = ["numero_conta", "valor", "senha"];
-  const { statusCode, mensagem } = verifyBodyAndData(body, 3, correctKeys);
-
-  if (statusCode && mensagem) return res.status(statusCode).send({ mensagem });
-
-  const { numero_conta, valor, senha } = req.body;
+  const { numero_conta, valor } = req.body;
 
   const accountExists = numberAccountExists(numero_conta);
 
-  if (!accountExists)
-    return res.status(404).send({
-      mensagem:
-        "Desculpe, a conta que está tentando realizar um saque não existe.",
-    });
-
-  if (valor > accountExists.saldo || valor <= 0)
+  if (!valor || valor > accountExists.saldo || valor <= 0)
     return res.status(400).send({
       mensagem:
-        "O saque não pode ser processado devido a um valor inválido. Certifique-se de que o valor seja positivo e não exceda o saldo disponível na conta bancária.",
+        "O saque não pode ser processado devido a um valor inválido. Certifique-se de informar o campo valor, que ele seja positivo e não exceda seu saldo.",
     });
-
-  if (senha !== accountExists.usuario.senha)
-    return res.status(401).send({ mensagem: "A autenticação falhou!" });
 
   const data = getActualDateTime();
 
@@ -282,33 +266,28 @@ const transferMoney = (req, res) => {
 
   if (statusCode && mensagem) return res.status(statusCode).send({ mensagem });
 
-  const { numero_conta_origem, numero_conta_destino, valor, senha } = req.body;
+  const { numero_conta_origem, numero_conta_destino, valor } = req.body;
 
   const sourceAccountExists = numberAccountExists(numero_conta_origem);
   const destinationAccountExists = numberAccountExists(numero_conta_destino);
 
-  if (!sourceAccountExists || !destinationAccountExists)
+  if (!destinationAccountExists)
     return res.status(404).send({
       mensagem:
-        "Uma ou ambas as contas envolvidas na transferência não foram encontradas. A transferência não pode ser concluída.",
+        "Conta de destino informada não existe, por favor informe outra conta!",
     });
 
   if (numero_conta_origem === numero_conta_destino)
-    return res
-      .status(400)
-      .send({
-        mensagem:
-          "A transferência de uma conta para ela mesma não é permitida. Por favor, escolha contas diferentes para a transferência.",
-      });
+    return res.status(400).send({
+      mensagem:
+        "A transferência de uma conta para ela mesma não é permitida. Por favor, escolha contas diferentes para a transferência.",
+    });
 
   if (valor <= 0 || valor > sourceAccountExists.saldo)
     return res.status(400).send({
       mensagem:
-        "O saque não pode ser processado devido a um valor inválido. Certifique-se de que o valor seja positivo e não exceda o saldo disponível na conta bancária.",
+        "A transferência não pode ser processada devido a um valor inválido. Certifique-se de que o valor seja positivo e não exceda o saldo disponível na conta bancária.",
     });
-
-  if (senha !== sourceAccountExists.usuario.senha)
-    return res.status(401).send({ mensagem: "A autenticação falhou! " });
 
   const data = getActualDateTime();
   transferencias.push({
@@ -324,7 +303,17 @@ const transferMoney = (req, res) => {
   return res.status(204).send();
 };
 
+const getBalance = (req, res) => {
+  const { numero_conta } = req.query;
+
+  const { saldo } = numberAccountExists(numero_conta);
+
+  return res.status(200).send({ saldo });
+};
+
 module.exports = {
+  numberAccountExists,
+  verifyBodyAndData,
   listingExistingBankAccounts,
   addBankAccount,
   editUserBankAccount,
@@ -332,4 +321,5 @@ module.exports = {
   makeDeposit,
   withdrawMoney,
   transferMoney,
+  getBalance,
 };

@@ -2,7 +2,9 @@ const {
   banco: { senha },
 } = require("../data/bancodedados");
 
-const correctPassword = (req, res, next) => {
+const { numberAccountExists, verifyBodyAndData } = require("../controllers");
+
+const bankValidatePassword = (req, res, next) => {
   try {
     const { senha_banco } = req.query;
     if (!senha_banco)
@@ -18,4 +20,41 @@ const correctPassword = (req, res, next) => {
   }
 };
 
-module.exports = correctPassword;
+const userValidatePassword = (req, res, next) => {
+  try {
+    const { query, body } = req;
+    const { numero_conta_origem, numero_conta, senha } =
+      Object.keys(query).length === 0 ? body : query;
+
+    const params = {
+      numero_conta:
+        typeof numero_conta === "undefined"
+          ? numero_conta_origem
+          : numero_conta,
+      senha,
+    };
+
+    const correctKeys = ["numero_conta", "senha"];
+    const { statusCode, mensagem } = verifyBodyAndData(params, 2, correctKeys);
+
+    if (statusCode && mensagem)
+      return res.status(statusCode).send({ mensagem });
+
+    const accountExists = numberAccountExists(params.numero_conta);
+
+    if (!accountExists)
+      return res.status(404).send({
+        mensagem:
+          "A conta informada não existe. Por favor, certifique-se de informar uma conta válida.",
+      });
+
+    if (accountExists.usuario.senha !== senha)
+      return res.status(401).send({ mensagem: "A autenticação falhou!" });
+
+    next();
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+module.exports = { bankValidatePassword, userValidatePassword };
