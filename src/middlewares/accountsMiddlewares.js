@@ -13,8 +13,8 @@ const bankValidatePassword = (req, res, next) => {
       return res.status(401).send({ mensagem: "A autenticação falhou!" });
 
     next();
-  } catch (e) {
-    console.error(e);
+  } catch (err) {
+    return res.status(500).json({ mensagem: err });
   }
 };
 
@@ -49,8 +49,8 @@ const userValidatePassword = (req, res, next) => {
       return res.status(401).send({ mensagem: "A autenticação falhou!" });
 
     next();
-  } catch (e) {
-    console.error(e);
+  } catch (err) {
+    return res.status(500).json({ mensagem: err });
   }
 };
 
