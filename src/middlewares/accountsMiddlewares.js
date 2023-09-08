@@ -21,8 +21,10 @@ const bankValidatePassword = (req, res, next) => {
 const userValidatePassword = (req, res, next) => {
   try {
     const { query, body } = req;
-    const { numero_conta_origem, numero_conta, senha } =
-      Object.keys(query).length === 0 ? body : query;
+    const { numero_conta_origem, numero_conta, senha } = Object.keys(query)
+      .length
+      ? query
+      : body;
 
     const params = {
       numero_conta: numero_conta_origem || numero_conta,
