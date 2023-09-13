@@ -12,7 +12,7 @@ const {
 
 const listingExistingBankAccounts = (req, res) => {
   if (contas.length === 0) {
-    return res.status(CREATED).json();
+    return res.status(OK).json();
   }
 
   return res.status(OK).json(contas);
@@ -100,10 +100,7 @@ const editUserBankAccount = (req, res) => {
   const { statusCode: sc, mensagem: msg } = userDataValidator(body);
   if (sc && msg) return res.status(sc).json({ mensagem: msg });
 
-  const idxAccountEdit = idxAccount(numeroConta);
-
   accountExists.usuario = body;
-  contas.splice(idxAccountEdit, 1, accountExists);
 
   return res.status(NO_CONTENT).json();
 };
