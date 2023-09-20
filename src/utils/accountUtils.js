@@ -22,7 +22,7 @@ const verifyBodyAndData = (body = {}, numberKeys, correctKeys = []) => {
 
   if (bodyData.length !== numberKeys)
     return {
-      statusCode: 400,
+      statusCode: BAD_REQUEST,
       mensagem:
         "A requisição possui campos em excesso/insuficientes. Por favor, ajuste-a para incluir/excluir os campos necessários!",
     };
