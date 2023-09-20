@@ -68,7 +68,7 @@ const editUserBankAccount = (req, res) => {
 
   if (!accountExists)
     return res.status(NOT_FOUND).json({
-      mensgem:
+      mensagem:
         "Conta não encontrada: A conta que você está tentando editar não existe em nosso sistema.",
     });
 
@@ -147,7 +147,7 @@ const makeDeposit = (req, res) => {
         "Desculpe, a conta que está tentando realizar um deposito não existe.",
     });
 
-  if (valor < 0)
+  if (valor <= 0)
     return res
       .status(BAD_REQUEST)
       .json({ mensagem: "Por favor, informe um saldo válido, acima de zero." });

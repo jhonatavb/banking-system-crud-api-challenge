@@ -20,7 +20,7 @@ const {
 
 router.get("/contas", bankValidatePassword, listingExistingBankAccounts);
 router.post("/contas", addBankAccount);
-router.put("/:numeroConta/usuario", editUserBankAccount);
+router.put("/contas/:numeroConta/usuario", editUserBankAccount);
 router.delete("/contas/:numeroConta", deleteUserAccount);
 router.post("/transacoes/depositar", makeDeposit);
 router.post("/transacoes/sacar", userValidatePassword, withdrawMoney);
