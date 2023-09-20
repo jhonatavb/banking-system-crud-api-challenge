@@ -1,7 +1,5 @@
 const { contas } = require("../data");
-const CPF = require("cpf");
 const { isEmail } = require("validator");
-const zxcvbn = require("zxcvbn");
 const { BAD_REQUEST, UNPROCESSABLE_ENTITY } = require("./httpStatusUtils");
 let ID = 1;
 
@@ -24,7 +22,7 @@ const verifyBodyAndData = (body = {}, numberKeys, correctKeys = []) => {
 
   if (bodyData.length !== numberKeys)
     return {
-      statusCode: UNPROCESSABLE_ENTITY,
+      statusCode: 400,
       mensagem:
         "A requisição possui campos em excesso/insuficientes. Por favor, ajuste-a para incluir/excluir os campos necessários!",
     };
@@ -44,24 +42,13 @@ const verifyBodyAndData = (body = {}, numberKeys, correctKeys = []) => {
 };
 
 const userDataValidator = (body = {}) => {
-  const { cpf, data_nascimento, email, senha } = body;
-  const MAX_AGE_ALLOWED_OPEN_BANK_ACCOUNT = 130;
-  const actualYear = new Date().getFullYear();
-  const [userYearBirth] = data_nascimento.split("-");
-  const userAge = actualYear - userYearBirth;
-  const PASSWORD_SCORE = 4;
+  const { cpf, email, senha } = body;
+  const SIZE_CPF = 11;
 
-  if (!CPF.isValid(cpf))
+  if (cpf.length !== SIZE_CPF)
     return {
       statusCode: BAD_REQUEST,
       mensagem: "O CPF informado é inválido!",
-    };
-
-  if (userAge > MAX_AGE_ALLOWED_OPEN_BANK_ACCOUNT || userAge <= 0)
-    return {
-      statusCode: BAD_REQUEST,
-      mensagem:
-        "A idade fornecida não é válida para abrir uma conta bancária. Certifique-se de inserir uma idade válida.",
     };
 
   if (!isEmail(email))
@@ -71,7 +58,7 @@ const userDataValidator = (body = {}) => {
         "O endereço de e-mail fornecido não é válido. Certifique-se de inserir um endereço de e-mail válido.",
     };
 
-  if (zxcvbn(senha).score !== PASSWORD_SCORE)
+  if (!senha.trim())
     return {
       statusCode: BAD_REQUEST,
       mensagem:
