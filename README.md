@@ -66,7 +66,7 @@ Returns the list of all registered users.
     }
 Registers a user in the system (CPF, email, password, and date of birth will be validated).
 
-#### `PUT http://localhost:3000/1/usuario`
+#### `PUT http://localhost:3000/contas/1/usuario`
     {
       "nome": "Foo Bar Baz",
       "cpf": "73278729064",
